@@ -5,7 +5,7 @@
 # 2. does not allow explicit input/requested list define in init
 # 3. input/requested list and assignment can not be changed after init
 
-from typing import Any, override
+from typing import Any, override, Type
 import inspect
 from pydantic import model_validator
 from pydantic.fields import FieldInfo
@@ -78,7 +78,12 @@ class StaticTask(BaseTask):
 
     @override
     def __setattr__(self, name: str, value: Any) -> None:
-        if name in {"input_fields", "request_fields", "assignment", "init_input_kwargs"}:
+        if name in {
+            "input_fields",
+            "request_fields",
+            "assignment",
+            "init_input_kwargs",
+        }:
             raise AttributeError(f"{name} should not be modified after init")
 
         super().__setattr__(name, value)
@@ -102,9 +107,7 @@ class StaticTask(BaseTask):
 
     def fill_input_fields(self, form: Form = None, **value_kwargs):
         if form is not None and not isinstance(form, Form):
-            raise LionValueError(
-                "Invalid form for fill. Should be a instance of Form."
-            )
+            raise LionValueError("Invalid form for fill. Should be a instance of Form.")
         for i in self.input_fields:
             if self.none_as_valid_value:
                 if getattr(self, i) is not LN_UNDEFINED:
@@ -124,9 +127,7 @@ class StaticTask(BaseTask):
 
     def fill_request_fields(self, form: Form = None, **value_kwargs):
         if form is not None and not isinstance(form, Form):
-            raise LionValueError(
-                "Invalid form for fill. Should be a instance of Form."
-            )
+            raise LionValueError("Invalid form for fill. Should be a instance of Form.")
         for i in self.request_fields:
             if self.none_as_valid_value:
                 if getattr(self, i) is not LN_UNDEFINED:
@@ -145,13 +146,15 @@ class StaticTask(BaseTask):
                         setattr(self, i, value)
 
     @classmethod
-    def from_form(cls,
-                  assignment: str,
-                  form: Form,
-                  task_description: str = None,
-                  fill_inputs: bool = True,
-                  none_as_valid_value: bool = False,
-                  **input_value_kwargs):
+    def from_form(
+        cls,
+        assignment: str,
+        form: Form | Type[Form],
+        task_description: str = None,
+        fill_inputs: bool = True,
+        none_as_valid_value: bool = False,
+        **input_value_kwargs,
+    ):
         if inspect.isclass(form):
             if not issubclass(form, Form):
                 raise LionValueError(
@@ -173,7 +176,9 @@ class StaticTask(BaseTask):
 
         for i in obj.work_fields.keys():
             if i not in form_fields:
-                raise LionValueError(f"Invalid_assignment. Field {i} is not found in the form {form}.")
+                raise LionValueError(
+                    f"Invalid_assignment. Field {i} is not found in the form {form}."
+                )
             obj.update_field(i, field_obj=form_fields[i])
             if not none_as_valid_value and getattr(obj, i) is None:
                 setattr(obj, i, LN_UNDEFINED)

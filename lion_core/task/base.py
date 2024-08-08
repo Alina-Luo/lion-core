@@ -47,11 +47,8 @@ class BaseTask(Component, MutableRecord):
 
     @override
     def __setattr__(self, name: str, value: Any) -> None:
-        if name in {"input_fields", "requested_fields"}:
-            raise AttributeError(
-                "Cannot directly assign to input/requested fields. "
-                "Please use append_to_input and/or append_to_request if append is supported."
-            )
+        if name in {"input_fields", "request_fields"}:
+            raise AttributeError("Cannot directly assign to input/request fields. ")
 
         super().__setattr__(name, value)
 
@@ -124,9 +121,7 @@ class BaseTask(Component, MutableRecord):
                     missing_inputs.append(i)
         if missing_inputs:
             if handle_how == "raise":
-                raise ValueError(
-                    f"Input fields {missing_inputs} are not provided."
-                )
+                raise ValueError(f"Input fields {missing_inputs} are not provided.")
             elif handle_how == "return_missing":
                 return missing_inputs
 

@@ -29,8 +29,7 @@ class Report(Form):
     template_name: str = "default_report"
 
     final_output_fields: list[str] = Field(
-        default_factory=list,
-        description="A list for objective fields"
+        default_factory=list, description="A list for objective fields"
     )
 
     completed_tasks: Pile[BaseTask] = Field(
@@ -39,8 +38,7 @@ class Report(Form):
     )
 
     completed_task_assignments: dict[str, str] = Field(
-        default_factory=dict,
-        description="assignments completed for the report"
+        default_factory=dict, description="assignments completed for the report"
     )
 
     @property
@@ -55,7 +53,9 @@ class Report(Form):
     @property
     def work_fields(self):
         base_report_fields = Report.model_fields.keys()
-        return {k: getattr(self, k) for k in self.all_fields if k not in base_report_fields}
+        return {
+            k: getattr(self, k) for k in self.all_fields if k not in base_report_fields
+        }
 
     def get_incomplete_fields(self, none_as_valid_value=False):
         base_report_fields = Report.model_fields.keys()
@@ -74,7 +74,9 @@ class Report(Form):
 
     def parse_assignment(self, input_fields: list[str], request_fields: list[str]):
         if not isinstance(input_fields, list) or not isinstance(request_fields, list):
-            raise ValueError("Invalid input_fields or request_fields type. Should be a list of str")
+            raise ValueError(
+                "Invalid input_fields or request_fields type. Should be a list of str"
+            )
         for i in input_fields + request_fields:
             if i not in self.all_fields:
                 raise ValueError(f"Invalid field {i}. Failed to find it in all_fields")
@@ -83,27 +85,39 @@ class Report(Form):
         output_assignment = ", ".join(request_fields)
         return " -> ".join([input_assignment, output_assignment])
 
-    def create_task(self,
-                    assignment: str = None,
-                    input_fields: list[str] = None,
-                    request_fields: list[str] = None,
-                    task_description: str = None,
-                    fill_inputs: bool = True,
-                    none_as_valid_value: bool = False):
+    def create_task(
+        self,
+        assignment: str = None,
+        input_fields: list[str] = None,
+        request_fields: list[str] = None,
+        task_description: str = None,
+        fill_inputs: bool = True,
+        none_as_valid_value: bool = False,
+    ):
         if all(i is None for i in [assignment, input_fields, request_fields]):
-            raise ValueError("Please provide an assignment or input/request fields to create a task.")
-        if assignment is not None and (input_fields is not None or request_fields is not None):
-            raise ValueError("Please provide an assignment only or input/request fields only, not both.")
+            raise ValueError(
+                "Please provide an assignment or input/request fields to create a task."
+            )
+        if assignment is not None and (
+            input_fields is not None or request_fields is not None
+        ):
+            raise ValueError(
+                "Please provide an assignment only or input/request fields only, not both."
+            )
         if assignment is None and (input_fields is None or request_fields is None):
-            raise ValueError("Please provide input_fields list and request_fields list together.")
+            raise ValueError(
+                "Please provide input_fields list and request_fields list together."
+            )
 
         if not assignment:
             assignment = self.parse_assignment(input_fields, request_fields)
-        task = StaticTask.from_form(assignment=assignment,
-                                    form=self,
-                                    task_description=task_description,
-                                    fill_inputs=fill_inputs,
-                                    none_as_valid_value=none_as_valid_value)
+        task = StaticTask.from_form(
+            assignment=assignment,
+            form=self,
+            task_description=task_description,
+            fill_inputs=fill_inputs,
+            none_as_valid_value=none_as_valid_value,
+        )
         return task
 
     def save_completed_task(self, task: StaticTask, update_results=False):
@@ -115,8 +129,10 @@ class Report(Form):
         report_fields = self.all_fields.keys()
         for i in task.work_fields.keys():
             if i not in report_fields:
-                raise LionValueError(f"Tha task does not match the report. "
-                                     f"Field {i} in the task assignment is not found in the report.")
+                raise LionValueError(
+                    f"Tha task does not match the report. "
+                    f"Field {i} in the task assignment is not found in the report."
+                )
 
         self.completed_tasks.include(task)
         self.completed_task_assignments[task.ln_id] = task.assignment
@@ -132,7 +148,9 @@ class Report(Form):
             raise LionValueError(
                 "Invalid form template. The template class must be a subclass of Form."
             )
-        report_template_name = "report_for_" + template_class.model_fields["template_name"].default
+        report_template_name = (
+            "report_for_" + template_class.model_fields["template_name"].default
+        )
         report_obj = cls(template_name=report_template_name)
 
         base_report_fields = Report.model_fields.keys()
